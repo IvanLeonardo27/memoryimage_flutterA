@@ -14,12 +14,7 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Login',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: Login(),
-      debugShowCheckedModeBanner: false,
-    );
+    return const Login();
   }
 }
 
@@ -56,11 +51,13 @@ class _LoginState extends State<Login> {
       await prefs.setString("username", username.trim());
       active_user = username.trim();
 
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const MyApp()),
-        (route) => false,
-      );
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const MyHomePage(title: 'Home')),
+          (route) => false,
+        );
+      }
     } else {
       showMsg("Username salah");
     }
@@ -73,34 +70,69 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login'), centerTitle: true),
-      body: Center(
-        child: Container(
-          height: 300,
-          width: 400,
-          padding: const EdgeInsets.all(20),
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(width: 1),
-            color: Colors.white,
-            boxShadow: const [BoxShadow(blurRadius: 5)],
+      body: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Logo/Icon dengan efek shadow
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.auto_awesome, size: 80, color: Colors.amber),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                "Mind Master",
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 40),
+              // Input Field Glassmorphism
               TextField(
-                decoration: const InputDecoration(labelText: "Username"),
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: "Enter your username",
+                  hintStyle: const TextStyle(color: Colors.white54),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.05),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  prefixIcon: const Icon(Icons.person_outline, color: Colors.amber),
+                ),
                 onChanged: (v) => username = v,
               ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 45,
-                child: ElevatedButton(
-                  onPressed: doLogin,
-                  child: const Text("Login"),
+              const SizedBox(height: 24),
+              // Main Button
+              ElevatedButton(
+                onPressed: doLogin,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber,
+                  foregroundColor: Colors.black87,
+                  minimumSize: const Size(double.infinity, 55),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
                 ),
+                child: const Text("START PLAYING", style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           ),
