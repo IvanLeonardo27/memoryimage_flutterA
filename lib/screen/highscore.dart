@@ -27,6 +27,22 @@ class _HighscoreScreenState extends State<HighscoreScreen> {
     
     // Parse dan konversi ke list of maps
     List<Map<String, dynamic>> players = [];
+    
+    // Sort leaderboard berdasarkan score (descending), kemudian timestamp (ascending) untuk tie-breaking
+    leaderboard.sort((a, b) {
+      List<String> partsA = a.split(',');
+      List<String> partsB = b.split(',');
+      int scoreA = int.parse(partsA[1]);
+      int scoreB = int.parse(partsB[1]);
+      int scoreCompare = scoreB.compareTo(scoreA); // Score descending
+      if (scoreCompare != 0) return scoreCompare;
+      // Jika score sama, urutkan berdasarkan timestamp (lebih awal = rank lebih tinggi)
+      int timestampA = partsA.length > 2 ? int.parse(partsA[2]) : 0;
+      int timestampB = partsB.length > 2 ? int.parse(partsB[2]) : 0;
+      return timestampA.compareTo(timestampB); // Timestamp ascending
+    });
+    
+    // Ambil hanya top 3
     for (int i = 0; i < leaderboard.length && i < 3; i++) {
       List<String> parts = leaderboard[i].split(',');
       String username = parts[0];

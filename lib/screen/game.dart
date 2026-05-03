@@ -6,8 +6,6 @@ import 'dart:math';
 
 // UX Note: Pastikan font 'Poppins' atau font sans-serif modern lainnya sudah didaftarkan di pubspec.yaml untuk estetika terbaik.
 
-String user = active_user;
-
 class Game extends StatefulWidget {
   const Game({Key? key}) : super(key: key);
 
@@ -153,14 +151,16 @@ class _GameState extends State<Game> {
 
   void _saveScore() async {
     final prefs = await SharedPreferences.getInstance();
+    String currentUser = active_user; // Ambil user yang sedang login
+    int timestamp = DateTime.now().millisecondsSinceEpoch; // Untuk tie-breaking
     
-    // Ambil leaderboard yang sudah ada (format: ["username,score", "username,score", ...])
+    // Ambil leaderboard yang sudah ada (format: ["username,score,timestamp", ...])
     List<String> leaderboard = prefs.getStringList('leaderboard') ?? [];
     
     // Cek apakah user ini sudah ada di leaderboard
     int existingIndex = leaderboard.indexWhere((entry) {
       String username = entry.split(',')[0];
-      return username == user;
+      return username == currentUser;
     });
     
     // Jika sudah ada, update score-nya jika score baru lebih tinggi
@@ -168,18 +168,25 @@ class _GameState extends State<Game> {
       List<String> parts = leaderboard[existingIndex].split(',');
       int oldScore = int.parse(parts[1]);
       if (_score > oldScore) {
-        leaderboard[existingIndex] = '$user,$_score';
+        leaderboard[existingIndex] = '$currentUser,$_score,$timestamp';
       }
     } else {
       // Jika belum ada, tambahkan entry baru
-      leaderboard.add('$user,$_score');
+      leaderboard.add('$currentUser,$_score,$timestamp');
     }
     
-    // Sort leaderboard berdasarkan score (descending)
+    // Sort leaderboard berdasarkan score (descending), kemudian timestamp (ascending) untuk tie-breaking
     leaderboard.sort((a, b) {
-      int scoreA = int.parse(a.split(',')[1]);
-      int scoreB = int.parse(b.split(',')[1]);
-      return scoreB.compareTo(scoreA); // Descending order
+      List<String> partsA = a.split(',');
+      List<String> partsB = b.split(',');
+      int scoreA = int.parse(partsA[1]);
+      int scoreB = int.parse(partsB[1]);
+      int scoreCompare = scoreB.compareTo(scoreA); // Score descending
+      if (scoreCompare != 0) return scoreCompare;
+      // Jika score sama, urutkan berdasarkan timestamp (lebih awal = rank lebih tinggi)
+      int timestampA = int.parse(partsA[2]);
+      int timestampB = int.parse(partsB[2]);
+      return timestampA.compareTo(timestampB); // Timestamp ascending
     });
     
     // Simpan kembali ke SharedPreferences

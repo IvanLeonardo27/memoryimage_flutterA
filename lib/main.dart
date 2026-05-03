@@ -95,7 +95,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   void doLogout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    await prefs.remove('username');
     active_user = "";
 
     Navigator.pushAndRemoveUntil(
