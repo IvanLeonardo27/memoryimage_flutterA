@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orangsombong_memoryimage/screen/login.dart' as loginPage;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:orangsombong_memoryimage/main.dart' as main;
 
@@ -11,54 +12,24 @@ class HighscoreScreen extends StatefulWidget {
 }
 
 class _HighscoreScreenState extends State<HighscoreScreen> {
-  List<Map<String, dynamic>> _topPlayers = [];
+  List<Map<String, String>> _topPlayers = [];
 
   @override
   void initState() {
     super.initState();
-    _loadLeaderboard();
+    _topPlayers = List.from(loginPage.users);
+
+    _topPlayers.sort((a, b) {
+        int scoreA = int.parse(a['score'] ?? '0');
+        int scoreB = int.parse(b['score'] ?? '0');
+
+        return scoreB.compareTo(scoreA); // DESC (besar ke kecil)
+      }
+    );
+
   }
 
-  void _loadLeaderboard() async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    // Ambil leaderboard dari SharedPreferences
-    List<String> leaderboard = prefs.getStringList('leaderboard') ?? [];
-    
-    // Parse dan konversi ke list of maps
-    List<Map<String, dynamic>> players = [];
-    
-    // Sort leaderboard berdasarkan score (descending), kemudian timestamp (ascending) untuk tie-breaking
-    leaderboard.sort((a, b) {
-      List<String> partsA = a.split(',');
-      List<String> partsB = b.split(',');
-      int scoreA = int.parse(partsA[1]);
-      int scoreB = int.parse(partsB[1]);
-      int scoreCompare = scoreB.compareTo(scoreA); // Score descending
-      if (scoreCompare != 0) return scoreCompare;
-      // Jika score sama, urutkan berdasarkan timestamp (lebih awal = rank lebih tinggi)
-      int timestampA = partsA.length > 2 ? int.parse(partsA[2]) : 0;
-      int timestampB = partsB.length > 2 ? int.parse(partsB[2]) : 0;
-      return timestampA.compareTo(timestampB); // Timestamp ascending
-    });
-    
-    // Ambil hanya top 3
-    for (int i = 0; i < leaderboard.length && i < 3; i++) {
-      List<String> parts = leaderboard[i].split(',');
-      String username = parts[0];
-      int score = int.parse(parts[1]);
-      
-      players.add({
-        'rank': i + 1,
-        'username': username,
-        'score': score,
-      });
-    }
-    
-    setState(() {
-      _topPlayers = players;
-    });
-  }
+
 
   Color _getRankColor(int rank) {
     switch (rank) {
@@ -124,30 +95,13 @@ class _HighscoreScreenState extends State<HighscoreScreen> {
                 ),
                 const SizedBox(height: 60),
 
-                // Tampilkan Top 3 Players
-                if (_topPlayers.isEmpty)
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 30),
-                    padding: const EdgeInsets.all(30),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: const Text(
-                      'Belum ada data pemain',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.white70,
-                      ),
-                    ),
-                  )
-                else
-                  Column(
+                
+                Column(
                     children: List.generate(_topPlayers.length, (index) {
-                      Map<String, dynamic> player = _topPlayers[index];
-                      int rank = player['rank'];
-                      String username = player['username'];
-                      int score = player['score'];
+                      Map<String, String> player = _topPlayers[index];
+                      int rank = index+1; // 0+1 = 1 dan seterusnya 1+1, 2+1
+                      String username = player['username']!;
+                      int score = int.parse(player['score']!);
                       Color rankColor = _getRankColor(rank);
                       
                       return Padding(
@@ -286,7 +240,7 @@ class _HighscoreScreenState extends State<HighscoreScreen> {
                       onPressed: () {
                         Navigator.of(context).pushAndRemoveUntil(
                           MaterialPageRoute(
-                            builder: (context) => main.MyHomePage(title: 'Home'),
+                            builder: (context) => main.MyHomePage(),
                           ),
                           (route) => false,
                         );

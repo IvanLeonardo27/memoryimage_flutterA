@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
+import 'dart:convert';
 
 // Data User
 final List<Map<String, String>> users = [
-  {"username": "admin"},
-  {"username": "budi"},
-  {"username": "andi"},
+  {"username": "admin", "score":"1"},
+  {"username": "budi", "score":"1"},
+  {"username": "andi", "score":"1"},
 ];
 
 class LoginScreen extends StatelessWidget {
@@ -28,14 +29,21 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   String username = "";
 
-  bool checkLogin(String u) {
-    for (var user in users) {
-      if (user["username"] == u.trim()) {
-        return true;
-      }
+  Map<String, String> getOrCreateUser(String u) {
+  for (var user in users) {
+    if (user["username"] == u.trim()) {
+      return user; 
     }
-    return false;
   }
+
+  final newUser = {
+    "username": u.trim(),
+    "score": "0",
+  };
+
+  users.add(newUser);
+  return newUser;
+}
 
   void doLogin() async {
     if (username.isEmpty) {
@@ -43,24 +51,30 @@ class _LoginState extends State<Login> {
       return;
     }
 
-    bool success = checkLogin(username);
+    final userData = getOrCreateUser(username);
 
-    if (success) {
       final prefs = await SharedPreferences.getInstance();
 
-      await prefs.setString("username", username.trim());
-      active_user = username.trim();
+      String uname = userData["username"]!;
+      String uscore = userData["score"]!;
+
+      await prefs.setString("username", uname);
+      await prefs.setString("score", uscore);
+
+      active_user = uname;
+      score_user = uscore;
 
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const MyHomePage(title: 'Home')),
+          MaterialPageRoute(builder: (_) => const MyHomePage()),
           (route) => false,
         );
       }
-    } else {
-      showMsg("Username salah");
-    }
+    // if (userData != null) {
+    // } else {
+    //   showMsg("Username salah");
+    // }
   }
 
   void showMsg(String msg) {
@@ -75,6 +89,7 @@ class _LoginState extends State<Login> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+            // colors: [Colors.white, Colors.white],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -95,7 +110,7 @@ class _LoginState extends State<Login> {
               ),
               const SizedBox(height: 24),
               const Text(
-                "Mind Master",
+                "Memory Master",
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.w800,
@@ -132,7 +147,7 @@ class _LoginState extends State<Login> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 0,
                 ),
-                child: const Text("START PLAYING", style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text("LOGIN", style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           ),

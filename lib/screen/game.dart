@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:orangsombong_memoryimage/main.dart';
+import 'package:orangsombong_memoryimage/screen/login.dart';
 import 'dart:async';
 import 'dart:math';
-
-// UX Note: Pastikan font 'Poppins' atau font sans-serif modern lainnya sudah didaftarkan di pubspec.yaml untuk estetika terbaik.
 
 class Game extends StatefulWidget {
   const Game({Key? key}) : super(key: key);
@@ -14,8 +13,6 @@ class Game extends StatefulWidget {
 }
 
 class _GameState extends State<Game> {
-  // --- LOGIC PROGRAM (TIDAK DIUBAH) ---
-  int _countdownKuis = 30;
   bool _isGameFinish = false;
   bool _isMemorizePhase = true;
   List<int> _urutanGambar = [];
@@ -41,7 +38,7 @@ class _GameState extends State<Game> {
   }
 
   void randomUrutanDanJawaban() {
-    List<int> angka = [1, 2, 3, 4, 5, 6, 7];
+    List<int> angka = [1, 2, 3];
     List<String> listJawaban = [];
     angka.shuffle();
 
@@ -107,9 +104,14 @@ class _GameState extends State<Game> {
   void _startAnswerTimer() {
     _answerTimer?.cancel();
     _answerTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return; //cuman buat penanganan detail
+
       setState(() {
-        _timeLeft--;
+        if (_timeLeft > 0) {
+          _timeLeft--;
+        }
       });
+
       if (_timeLeft == 0) {
         _answerTimer?.cancel();
         _autoNextQuestion(isTimeout: true);
@@ -136,13 +138,12 @@ class _GameState extends State<Game> {
 
   void _autoNextQuestion({required bool isTimeout}) {
     if (_index < _urutanGambar.length - 1) {
-      setState(() {
-        _index += 1;
-        _generatePilihan();
-      });
+      _index += 1;
+      _generatePilihan();
+
     } else {
       _answerTimer?.cancel();
-      _saveScore(); // Simpan score sebelum game selesai
+      _saveScore(); //! Simpan score sebelum game selesai
       setState(() {
         _isGameFinish = true;
       });
@@ -151,46 +152,56 @@ class _GameState extends State<Game> {
 
   void _saveScore() async {
     final prefs = await SharedPreferences.getInstance();
-    String currentUser = active_user; // Ambil user yang sedang login
-    int timestamp = DateTime.now().millisecondsSinceEpoch; // Untuk tie-breaking
+    // String currentUser = active_user; // Ambil user yang sedang login
+    // int timestamp = DateTime.now().millisecondsSinceEpoch; // Untuk tie-breaking
     
     // Ambil leaderboard yang sudah ada (format: ["username,score,timestamp", ...])
-    List<String> leaderboard = prefs.getStringList('leaderboard') ?? [];
-    
-    // Cek apakah user ini sudah ada di leaderboard
-    int existingIndex = leaderboard.indexWhere((entry) {
-      String username = entry.split(',')[0];
-      return username == currentUser;
-    });
-    
-    // Jika sudah ada, update score-nya jika score baru lebih tinggi
-    if (existingIndex != -1) {
-      List<String> parts = leaderboard[existingIndex].split(',');
-      int oldScore = int.parse(parts[1]);
-      if (_score > oldScore) {
-        leaderboard[existingIndex] = '$currentUser,$_score,$timestamp';
+    // List<String> leaderboard = prefs.getStringList('leaderboard') ?? [];
+
+    for (var user in users) { //ini ambil dari login
+      if (user["username"] == active_user && _score > int.parse(score_user)) {
+        setState(() {
+          user["score"] = _score.toString(); 
+          score_user = _score.toString();
+        });
+        await prefs.setString("score", _score.toString());
       }
-    } else {
-      // Jika belum ada, tambahkan entry baru
-      leaderboard.add('$currentUser,$_score,$timestamp');
     }
     
-    // Sort leaderboard berdasarkan score (descending), kemudian timestamp (ascending) untuk tie-breaking
-    leaderboard.sort((a, b) {
-      List<String> partsA = a.split(',');
-      List<String> partsB = b.split(',');
-      int scoreA = int.parse(partsA[1]);
-      int scoreB = int.parse(partsB[1]);
-      int scoreCompare = scoreB.compareTo(scoreA); // Score descending
-      if (scoreCompare != 0) return scoreCompare;
-      // Jika score sama, urutkan berdasarkan timestamp (lebih awal = rank lebih tinggi)
-      int timestampA = int.parse(partsA[2]);
-      int timestampB = int.parse(partsB[2]);
-      return timestampA.compareTo(timestampB); // Timestamp ascending
-    });
+    // Cek apakah user ini sudah ada di leaderboard
+    // int existingIndex = leaderboard.indexWhere((entry) {
+    //   String username = entry.split(',')[0];
+    //   return username == currentUser;
+    // });
     
-    // Simpan kembali ke SharedPreferences
-    await prefs.setStringList('leaderboard', leaderboard);
+    // // Jika sudah ada, update score-nya jika score baru lebih tinggi
+    // if (existingIndex != -1) {
+    //   List<String> parts = leaderboard[existingIndex].split(',');
+    //   int oldScore = int.parse(parts[1]);
+    //   if (_score > oldScore) {
+    //     leaderboard[existingIndex] = '$currentUser,$_score,$timestamp';
+    //   }
+    // } else {
+    //   // Jika belum ada, tambahkan entry baru
+    //   leaderboard.add('$currentUser,$_score,$timestamp');
+    // }
+    
+    // // Sort leaderboard berdasarkan score (descending), kemudian timestamp (ascending) untuk tie-breaking
+    // leaderboard.sort((a, b) {
+    //   List<String> partsA = a.split(',');
+    //   List<String> partsB = b.split(',');
+    //   int scoreA = int.parse(partsA[1]);
+    //   int scoreB = int.parse(partsB[1]);
+    //   int scoreCompare = scoreB.compareTo(scoreA); // Score descending
+    //   if (scoreCompare != 0) return scoreCompare;
+    //   // Jika score sama, urutkan berdasarkan timestamp (lebih awal = rank lebih tinggi)
+    //   int timestampA = int.parse(partsA[2]);
+    //   int timestampB = int.parse(partsB[2]);
+    //   return timestampA.compareTo(timestampB); // Timestamp ascending
+    // });
+    
+    // // Simpan kembali ke SharedPreferences
+    // await prefs.setStringList('leaderboard', leaderboard);
   }
 
   @override
@@ -200,31 +211,24 @@ class _GameState extends State<Game> {
     super.dispose();
   }
 
-  // UI ADJUSTMENT
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Kita gunakan Stack untuk meletakkan background image di lapisan paling bawah
       body: Stack(
         children: [
-          // LAYER 1: BACKGROUND IMAGE
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
                 image: AssetImage("assets/images/background_game.jpg"),
-                fit: BoxFit.cover, // Memastikan gambar menutupi seluruh layar
+                fit: BoxFit.cover,
               ),
             ),
           ),
 
-          // LAYER 2: DARK OVERLAY 
-
-          // LAYER 3: GAME CONTENT
           SafeArea(
             child: _isGameFinish
-                ? _buildFinishUI()
-                : (_isMemorizePhase ? _buildMemorizeUI() : _buildGuessingUI()),
+                ? _finishUI()
+                : (_isMemorizePhase ? _memorizeUI() : _guessingUI()),
           ),
         ],
       ),
@@ -232,12 +236,11 @@ class _GameState extends State<Game> {
   }
 
   // 1. Tampilan Fase Mengingat (Program 1)
-  Widget _buildMemorizeUI() {
+  Widget _memorizeUI() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Header Teks dengan Background Semi-Transparan agar kontras
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
@@ -249,14 +252,13 @@ class _GameState extends State<Game> {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B), // Navy gelap
+                color: Color(0xFF1E293B), 
                 letterSpacing: 1.1,
               ),
             ),
           ),
           const SizedBox(height: 50),
 
-          // Kartu Gambar dengan Bayangan Tebal (Depth)
           AnimatedOpacity(
             opacity: _opacity,
             duration: const Duration(milliseconds: 300),
@@ -272,7 +274,6 @@ class _GameState extends State<Game> {
                     offset: const Offset(0, 10),
                   ),
                 ],
-                // Border putih solid untuk kesan premium
                 border: Border.all(color: Colors.white, width: 6),
               ),
               child: ClipRRect(
@@ -287,7 +288,7 @@ class _GameState extends State<Game> {
             ),
           ),
           const SizedBox(height: 30),
-          // Indikator Progress Kecil
+          // Indikator Progress 
           Text(
             "${_index + 1} / ${_urutanGambar.length}",
             style: const TextStyle(
@@ -301,8 +302,7 @@ class _GameState extends State<Game> {
   }
 
   // 2. Tampilan Fase Menebak (Program 2)
-  // UI UNTUK PROGRAM 2 (MENEBAK) 
-  Widget _buildGuessingUI() {
+  Widget _guessingUI() {
     return Column(
       children: [
         _buildGameHeader(),
@@ -325,7 +325,7 @@ class _GameState extends State<Game> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(
-                    "Manakah gambar yang kamu lihat sebelumnya?", // Menyesuaikan referensi UI
+                    "Manakah gambar yang kamu lihat sebelumnya?",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
@@ -351,9 +351,11 @@ class _GameState extends State<Game> {
 
                     Color borderColor = Colors.white;
                     if (_isAnswered) {
-                      if (isCorrect) borderColor = Colors.greenAccent.shade700;
-                      if (isSelected && !isCorrect)
+                      if (isCorrect) {
+                        borderColor = Colors.greenAccent.shade700;
+                      } else if (isSelected) {
                         borderColor = Colors.redAccent;
+                      }
                     }
 
                     return GestureDetector(
@@ -377,14 +379,11 @@ class _GameState extends State<Game> {
                           border: Border.all(
                             color: borderColor,
                             width:
-                                _isAnswered &&
-                                    (isCorrect || (isSelected && !isCorrect))
-                                ? 4
-                                : 2,
+                                _isAnswered && isCorrect ? 4 : 2,
                           ),
                         ),
                         child: Padding(
-                          padding: const EdgeInsets.all(12.0),
+                          padding: const EdgeInsets.all(8.0),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(10),
                             child: Image.asset(pilihan, fit: BoxFit.contain),
@@ -521,7 +520,7 @@ class _GameState extends State<Game> {
   }
 
   // 3. Tampilan Layar Selesai
-  Widget _buildFinishUI() {
+  Widget _finishUI() {
     return Center(
       child: Container(
         margin: const EdgeInsets.all(30),
@@ -559,7 +558,48 @@ class _GameState extends State<Game> {
                 color: Colors.amber,
               ),
             ),
+            const SizedBox(height: 15),
+            Text(
+              getRank(_score),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: Colors.amber,
+              ),
+            ),
             const SizedBox(height: 40),
+
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber,
+                  foregroundColor: Colors.black87,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  elevation: 5,
+                ),
+                onPressed: () {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => Game()),
+                    (route) => false,
+                  );
+                },
+                child: const Text(
+                  "PLAY AGAIN",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 15),
+
             SizedBox(
               width: double.infinity,
               height: 55,
@@ -574,7 +614,7 @@ class _GameState extends State<Game> {
                 ),
                 onPressed: () => Navigator.pushNamed(context, 'GameHighScore'),
                 child: const Text(
-                  "LIHAT LEADERBOARD",
+                  "HIGH SCORES",
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -583,7 +623,9 @@ class _GameState extends State<Game> {
                 ),
               ),
             ),
+
             const SizedBox(height: 15),
+
             SizedBox(
               width: double.infinity,
               height: 55,
@@ -596,7 +638,13 @@ class _GameState extends State<Game> {
                   ),
                   elevation: 5,
                 ),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    'home',
+                    (route) => false,
+                  );
+                },
                 child: const Text(
                   "KEMBALI KE HOME",
                   style: TextStyle(
@@ -611,5 +659,14 @@ class _GameState extends State<Game> {
         ),
       ),
     );
+  }
+
+  String getRank(int score) {
+    if (score == 0) return "Sfortunato Indovinatore (Unlucky Guesser)";
+    if (score == 1) return "Neofita dell'Indovinello (Riddle Novice)";
+    if (score == 2) return "Principiante dell'Indovinello (Riddle Beginner)";
+    if (score == 3) return "Abile Indovinatore (Skillful Guesser)";
+    if (score == 4) return "Esperto dell'Indovinello (Expert of Riddles)";
+    return "Maestro dell'Indovinello (Master of Riddles)";
   }
 }

@@ -5,36 +5,39 @@ import 'screen/highscore.dart';
 import 'screen/game.dart';
 
 String active_user = "";
+String score_user = "";
 
-Future<String> checkUser() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString("username") ?? '';
-}
+// Future<String> checkUser() async {
+//   final prefs = await SharedPreferences.getInstance();
+//   return prefs.getString("username") ?? '';
+// }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final prefs = await SharedPreferences.getInstance();
   final String? username = prefs.getString('username');
+  final String? score = prefs.getString('score');
 
   if (username == null) {
     active_user = "";
-    runApp(const MemoryBirdApp(initialScreen: LoginScreen()));
+    runApp(const MyApp(initialScreen: LoginScreen()));
   } else {
     active_user = username;
-    runApp(const MemoryBirdApp(initialScreen: MyHomePage(title: 'Home')));
+    score_user = score!;
+    runApp(const MyApp(initialScreen: MyHomePage()));
   }
 }
 
-class MemoryBirdApp extends StatelessWidget {
+class MyApp extends StatelessWidget {
   final Widget initialScreen;
 
-  const MemoryBirdApp({super.key, required this.initialScreen});
+  const MyApp({super.key, required this.initialScreen});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Mind Master Memory',
+      title: 'Memory Master',
       debugShowCheckedModeBanner: false,
       
       // DESIGN SYSTEM: Menggunakan tema modern & clean
@@ -79,14 +82,14 @@ class MemoryBirdApp extends StatelessWidget {
       routes: {
         'PlayGame': (context) => Game(),
         'GameHighScore': (context) => HighscoreScreen(),
+        'home': (context) => MyHomePage(),
       },
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
+  const MyHomePage({super.key});
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -108,10 +111,11 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: myDrawer(),
+
       // Menggunakan Stack untuk background image yang memenuhi layar
       body: Stack(
         children: [
-          // 1. Background Image Layer
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -121,10 +125,8 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
           
-          // 2. Overlay Layer (Sedikit transparansi agar UI terbaca)
           Container(color: Colors.white.withOpacity(0.1)),
 
-          // 3. Content Layer
           Column(
             children: [
               AppBar(
@@ -140,7 +142,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       padding: const EdgeInsets.all(32),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(30),
-                        color: Colors.white.withOpacity(0.9), // Glassmorphism soft
+                        color: Colors.white.withOpacity(0.9),
                         boxShadow: [
                           BoxShadow(
                             blurRadius: 20,
@@ -172,6 +174,21 @@ class _MyHomePageState extends State<MyHomePage> {
                             ),
                           ),
                           const SizedBox(height: 40),
+
+                          Text( //* cara main gamenya
+                            """
+pemain akan diberikan sebuah gambar dalam kurung waktu tertentu dan harus mengingatnya, setelah semua gambar selesai ditampilkan, maka game akan lanjut ke tahap 2.
+
+pada tahap 2, pemain akan diberikan 4 pilihan gamabar dan harus memilih gambar sesuai dengan gambar yang ditampilkan sebelumnya.
+                            """,
+                            textAlign: TextAlign.center,
+
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.normal,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
                           
                           // PLAY Button
                           SizedBox(
@@ -197,32 +214,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          
-                          // HIGHSCORE Button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 60,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1E293B),
-                                foregroundColor: Colors.white,
-                              ),
-                              onPressed: () {
-                                Navigator.pushNamed(context, 'GameHighScore');
-                              },
-                              child: const Text('HIGHSCORE'),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          
-                          // LOGOUT Button (Text Button Style untuk variasi UX)
-                          TextButton.icon(
-                            style: TextButton.styleFrom(foregroundColor: Colors.red.shade400),
-                            onPressed: doLogout,
-                            icon: const Icon(Icons.logout),
-                            label: const Text('Logout Account', style: TextStyle(fontWeight: FontWeight.bold)),
-                          ),
+                        
                         ],
                       ),
                     ),
@@ -235,4 +227,79 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+
+  Drawer myDrawer() {
+  return Drawer(
+    elevation: 16.0,
+    child: Column(
+      children: <Widget>[
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
+          decoration: const BoxDecoration(
+            color: Color(0xFF0F172A),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: 30,
+                backgroundImage: NetworkImage("https://i.pravatar.cc/150"),
+              ),
+              const SizedBox(height: 12),
+
+              Text(
+                active_user.isEmpty ? "Guest" : active_user,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 4),
+
+              Text(
+                "${active_user}@gmail.com",
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                ),
+              ),
+
+              const SizedBox(height: 6),
+
+              Text(
+                "Highscore: $score_user",
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        ListTile(
+          title: const Text("Highscore"),
+          leading: const Icon(Icons.score_sharp),
+          onTap: () {
+            Navigator.pushNamed(context, "GameHighScore");
+          },
+        ),
+
+        ListTile(
+          title: const Text("Logout"),
+          leading: const Icon(Icons.logout_sharp),
+          onTap: () {
+            doLogout();
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+
+
 }
