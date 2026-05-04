@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:orangsombong_memoryimage/screen/login.dart' as loginPage;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:orangsombong_memoryimage/main.dart' as main;
 
 
@@ -238,10 +237,9 @@ class _HighscoreScreenState extends State<HighscoreScreen> {
                         elevation: 5,
                       ),
                       onPressed: () {
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                            builder: (context) => main.MyHomePage(),
-                          ),
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          'home',
                           (route) => false,
                         );
                       },

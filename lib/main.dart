@@ -7,13 +7,9 @@ import 'screen/game.dart';
 String active_user = "";
 String score_user = "";
 
-// Future<String> checkUser() async {
-//   final prefs = await SharedPreferences.getInstance();
-//   return prefs.getString("username") ?? '';
-// }
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await loadUsers();
 
   final prefs = await SharedPreferences.getInstance();
   final String? username = prefs.getString('username');
@@ -24,7 +20,7 @@ void main() async {
     runApp(const MyApp(initialScreen: LoginScreen()));
   } else {
     active_user = username;
-    score_user = score!;
+    score_user = score ?? "0";
     runApp(const MyApp(initialScreen: MyHomePage()));
   }
 }

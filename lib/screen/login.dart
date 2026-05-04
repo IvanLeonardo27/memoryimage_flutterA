@@ -1,14 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
-import 'dart:convert';
+import 'dart:convert' ;
 
-// Data User
+// Data User, perlu diubah jadi shared pref
 final List<Map<String, String>> users = [
   {"username": "admin", "score":"1"},
   {"username": "budi", "score":"1"},
   {"username": "andi", "score":"1"},
 ];
+
+// Muat users dari SharedPreferences saat app start
+Future<void> loadUsers() async {
+  final prefs = await SharedPreferences.getInstance();
+  final saved = prefs.getStringList('users');
+  if (saved != null) {
+    users.clear();
+    for (String item in saved) {
+      users.add(Map<String, String>.from(jsonDecode(item)));
+    }
+  }
+}
+
+// Simpan users ke SharedPreferences
+Future<void> saveUsers() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setStringList('users', users.map((u) => jsonEncode(u)).toList());
+}
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -60,6 +78,7 @@ class _LoginState extends State<Login> {
 
       await prefs.setString("username", uname);
       await prefs.setString("score", uscore);
+      await saveUsers(); 
 
       active_user = uname;
       score_user = uscore;
