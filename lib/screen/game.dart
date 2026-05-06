@@ -38,7 +38,7 @@ class _GameState extends State<Game> {
   }
 
   void randomUrutanDanJawaban() {
-    List<int> angka = [1, 2, 3];
+    List<int> angka = [1, 2, 3, 4, 5];
     List<String> listJawaban = [];
     angka.shuffle();
 
